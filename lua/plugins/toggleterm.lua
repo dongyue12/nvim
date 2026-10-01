@@ -23,7 +23,12 @@ return {
     persist_size = true,
     direction = "horizontal", -- 默认方向：horizontal / vertical / float / tab
     close_on_exit = true,     -- shell 退出后自动关窗
-    shell = vim.o.shell,      -- 用系统默认 shell（Windows 上是 pwsh/cmd）
+
+    -- 内置终端用 PowerShell 7（pwsh）
+    -- ⚠️ 必须写完整路径：你装的是 Store 版，pwsh.exe 是个「应用执行别名」，
+    --    vim.fn.executable("pwsh") 返回 0，直接写 "pwsh" 会启动失败。
+    shell = (vim.env.LOCALAPPDATA or "")
+      .. "\\Microsoft\\WindowsApps\\Microsoft.PowerShell_8wekyb3d8bbwe\\pwsh.exe",
 
     -- 浮动终端的外观
     float_opts = {
