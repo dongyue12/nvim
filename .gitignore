@@ -1,0 +1,19 @@
+# 插件锁文件：这个要提交！它记录每个插件的确切 commit，
+# 有它才能在任何机器上还原出完全一样的环境。
+# （lazy-lock.json 不在下面的忽略列表里，所以会被正常跟踪）
+!lazy-lock.json
+
+# 日志和临时文件
+*.log
+*.tmp
+
+# Neovim 生成的
+doc/tags
+doc/tags-*
+
+# 编辑器/系统垃圾
+.DS_Store
+Thumbs.db
+
+# 如果你以后想忽略 lazyvim.json（记录 extras 状态），取消下面注释
+# lazyvim.json
