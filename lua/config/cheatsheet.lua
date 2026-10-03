@@ -155,6 +155,87 @@ function M.path()
   return user_file()
 end
 
+-- 文件不存在时自动创建的初始内容
+function M.template()
+  return {
+    "我的 Neovim 速查表",
+    "================================================================",
+    "",
+    "输入 :Help 打开的就是这个文件。随便改，:w 保存即可，下次打开改动还在。",
+    "",
+    "  :CheatView    用浮窗只读查看",
+    "  :CheatAuto    看自动生成的完整按键表（读自实际映射，不会过期）",
+    "  :HelpReal     真正的 Neovim 帮助文档",
+    "  :h <主题>     如 :h lsp",
+    "",
+    "leader 键 = 空格       <leader>e 就是「按空格，再按 e」",
+    "",
+    "",
+    "文件与 buffer",
+    "----------------------------------------------------------------",
+    "空格 e          开关文件树",
+    "空格 o          聚焦文件树",
+    "空格 1~9        跳到第 N 个 buffer",
+    "空格 b n        下一个 buffer",
+    "空格 b p        上一个 buffer",
+    "空格 b d        关闭当前 buffer",
+    "空格 b o        关闭其它 buffer",
+    "Shift+l/h       下一个 / 上一个 buffer",
+    "空格 q q        退出全部",
+    "",
+    "",
+    "分屏",
+    "----------------------------------------------------------------",
+    "空格 s v        左右分屏",
+    "空格 s h        上下分屏",
+    "空格 s c        关闭当前分屏",
+    "空格 s x        只保留当前分屏",
+    "Ctrl+h/j/k/l    在分屏间切换",
+    "Ctrl+方向键     调整分屏大小",
+    "",
+    "",
+    "终端",
+    "----------------------------------------------------------------",
+    "空格 t f        浮动终端",
+    "空格 t h        横向终端",
+    "空格 t v        纵向终端",
+    "Ctrl+\\          开关终端",
+    "（终端里按 Esc 回普通模式）",
+    "",
+    "",
+    "退出",
+    "----------------------------------------------------------------",
+    ":q              智能退出（没未保存改动就一次退干净）",
+    "空格 q          同上",
+    "空格 q q        无条件退出全部",
+    "",
+    "",
+    "保存与编辑",
+    "----------------------------------------------------------------",
+    "Ctrl+s          保存",
+    "Esc             取消搜索高亮",
+    "u / Ctrl+r      撤销 / 重做",
+    "空格 s o        数字排序（选中行）",
+    "空格 s O        字典排序（选中行）",
+    "",
+    "",
+    "有用的命令",
+    "----------------------------------------------------------------",
+    ":Lazy           插件管理（I 装 / U 更新 / S 同步 / X 清理）",
+    ":Mason          装 LSP / 格式化工具",
+    ":checkhealth    体检",
+    ":Lazy log       插件出错看这个",
+    "",
+    "",
+    "我自己的备忘",
+    "----------------------------------------------------------------",
+    "（这里随便写，比如常用目录、项目路径、自定义命令）",
+    "",
+    "",
+    "vim:tw=78:ts=8:noet:norl:",
+  }
+end
+
 -- 读取用户自己写的速查表；不存在或是空文件就返回 nil
 function M.user_lines()
   local path = user_file()
@@ -234,22 +315,42 @@ local function open_float()
   vim.keymap.set("n", "<Esc>", close, { buffer = buf, desc = "关闭速查表" })
 end
 
+-- 打开速查表文件来编辑（不存在就先建一个带模板的）
+local function edit_user_file()
+  local path = user_file()
+
+  -- 文件不存在就自动创建，并写入一份模板
+  if vim.fn.filereadable(path) ~= 1 then
+    local dir = vim.fn.fnamemodify(path, ":h")
+    if vim.fn.isdirectory(dir) == 0 then
+      vim.fn.mkdir(dir, "p")
+    end
+    pcall(vim.fn.writefile, M.template(), path)
+  end
+
+  vim.cmd("edit " .. vim.fn.fnameescape(path))
+end
+
 function M.setup()
   -- ⚠️ Neovim 硬性规定：自定义命令必须大写开头，
   --    所以 :help 没法被覆盖（试过，报 "must start with uppercase"）。
   --    按 Vim 惯例用大写变体：:Help = 速查表，查文档用 :h / :h <主题>。
+  --
+  -- :Help 直接打开 cheatsheet.md 这个文件本身（普通 buffer）：
+  --   能看、能改、:w 保存，下次打开改动还在。
+  --   不存在的会自动创建。
   vim.api.nvim_create_user_command("Help", function(opts)
     if opts.args ~= "" then
       -- 带参数时按原意查帮助，例如 :Help lsp
       vim.cmd("help " .. opts.args)
       return
     end
-    open_float()
+    edit_user_file()
   end, {
     nargs = "*",
     bang = true,
     force = true,
-    desc = "快捷键速查表（带参数时查帮助，如 :Help lsp）",
+    desc = "打开我的速查表文件（可直接编辑保存；带参数时查帮助）",
   })
 
   -- 保留一个明确的名字给真正的帮助文档
@@ -261,16 +362,13 @@ function M.setup()
     end
   end, { nargs = "*", bang = true, force = true, desc = "打开真正的 Neovim 帮助文档" })
 
-  -- 备用入口（万一 :Help 被别的东西占了）
-  vim.api.nvim_create_user_command("Cheat", open_float, { desc = "快捷键速查表" })
+  -- 备用入口
+  vim.api.nvim_create_user_command("Cheat", edit_user_file, { desc = "打开我的速查表文件" })
 
-  -- 打开你自己的速查表文件来编辑
-  vim.api.nvim_create_user_command("CheatEdit", function()
-    local path = user_file()
-    vim.cmd("edit " .. vim.fn.fnameescape(path))
-  end, { desc = "编辑我的速查表（lua/config/cheatsheet.md）" })
+  -- 用浮窗「只读」看一遍（不想动到文件时用）
+  vim.api.nvim_create_user_command("CheatView", open_float, { desc = "浮窗查看速查表（只读）" })
 
-  -- 打开自动生成的表（即使你写了 cheatsheet.md 也能看）
+  -- 打开自动生成的表（忽略你的文件）
   vim.api.nvim_create_user_command("CheatAuto", function()
     local lines = M.build()
     local width = 0
