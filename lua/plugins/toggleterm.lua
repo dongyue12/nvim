@@ -50,67 +50,40 @@ return {
   config = function(_, opts)
     require("toggleterm").setup(opts)
 
-    -- ── 安全关闭当前终端 ──────────────────────────────────────
-    -- 设计原则：**绝不把人困住**。
-    --   如果终端窗口关了之后没有别的地方可去（它是唯一窗口），
-    --   那就宁可不关，只退出终端模式，也不留一个死局。
-    --
-    -- 关窗但保留 shell 进程，所以下次打开是瞬时的、历史还在。
-    local function close_terminal()
-      local cur_win = vim.api.nvim_get_current_win()
-      local cur_buf = vim.api.nvim_get_current_buf()
-      local is_term = vim.bo[cur_buf].buftype == "terminal"
-
-      -- 先确保退出终端输入模式，否则后面 wincmd 可能不生效
-      if vim.api.nvim_get_mode().mode == "t" then
-        vim.cmd("stopinsert")
-      end
-
-      -- 找另一个「非终端」的普通窗口
-      local target
-      for _, win in ipairs(vim.api.nvim_list_wins()) do
-        if win ~= cur_win then
-          local b = vim.api.nvim_win_get_buf(win)
-          if vim.bo[b].buftype == "" then
-            target = win
-            break
-          end
-        end
-      end
-
-      if target then
-        -- 有地方可去：切过去，再关掉终端窗口
-        vim.api.nvim_set_current_win(target)
-        if vim.api.nvim_win_is_valid(cur_win) then
-          pcall(vim.api.nvim_win_close, cur_win, false)
-        end
-      elseif #vim.api.nvim_list_wins() > 1 then
-        -- 只剩终端和其它非普通窗口（比如文件树）：关掉当前窗口就行
-        pcall(vim.api.nvim_win_close, cur_win, false)
-      else
-        -- 终端是唯一窗口 —— 关了就没地方去了，只退出终端模式并提示
-        vim.cmd("stopinsert")
-        vim.notify(
-          "终端是当前唯一窗口，已退出终端模式。\n再按 <C-q> 一次就会关闭它。",
-          vim.log.levels.INFO
-        )
-      end
-    end
-
     -- 终端里的便捷键
     -- Esc 退出终端模式 —— 比原生的 <C-\><C-n> 好按
+    -- （<C-\> 本身不做映射，见上面 keys 里的说明：它是终端转义前缀）
     vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { desc = "退出终端模式（回普通模式）" })
 
-    -- Ctrl+q 关闭终端窗口（关两次可关掉唯一窗口）
-    vim.keymap.set({ "n", "t" }, "<C-q>", close_terminal, { desc = "关闭终端（保留 shell）" })
-
     -- 彻底结束终端（杀 shell 进程，下次打开是全新的）
+    -- 日常开关终端用 <C-\> 就够了，这个只在终端卡住 / 想重置环境时才用
     vim.keymap.set({ "n", "t" }, "<leader>tq", function()
+      local has_term = false
+      for _, b in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(b) and vim.bo[b].buftype == "terminal" then
+          has_term = true
+          break
+        end
+      end
+      if not has_term then
+        vim.notify("当前没有打开的终端", vim.log.levels.INFO)
+        return
+      end
+
       local ok, terms = pcall(require, "toggleterm.terminal")
       if not ok then return end
       local id = terms.get_focused_id()
       local term = id and terms.get(id, true)
-      if term then term:shutdown() end
+      if term then
+        term:shutdown()
+        vim.notify("终端已彻底关闭", vim.log.levels.INFO)
+      else
+        -- 没聚焦在终端上（比如已经用 <C-\> 关掉了），就整体清理
+        for _, t in ipairs(terms.get_all()) do
+          t:shutdown()
+        end
+        vim.notify("已清理全部终端", vim.log.levels.INFO)
+      end
     end, { desc = "彻底关闭终端（结束 shell 进程）" })
 
     -- 窗口切换
