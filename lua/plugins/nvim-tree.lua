@@ -171,8 +171,11 @@ return {
 
       -- 增删改
       vim.keymap.set("n", "a", api.fs.create, o("新建文件 / 文件夹"))
-      vim.keymap.set("n", "r", api.fs.rename, o("重命名（可改完整路径）"))
-      vim.keymap.set("n", "e", api.fs.rename_basename, o("只改文件名（不带路径）"))
+      -- r 用「全路径」模式，这样才能改位置。
+      -- 注意不能用 fs.rename / fs.rename_node（它们是 :t 模式，
+      -- 只让你改文件名，目录会被自动拼回去，所以挪不动）。
+      vim.keymap.set("n", "r", api.fs.rename_full, o("重命名 / 移动（改完整路径）"))
+      vim.keymap.set("n", "e", api.fs.rename_basename, o("只改文件名（保留扩展名）"))
       vim.keymap.set("n", "d", api.fs.trash, o("移到回收站"))
       vim.keymap.set("n", "D", api.fs.trash, o("移到回收站"))
       vim.keymap.set("n", "<Del>", api.fs.remove, o("彻底删除（不进回收站）"))
