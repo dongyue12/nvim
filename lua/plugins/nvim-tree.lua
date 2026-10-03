@@ -121,6 +121,25 @@ return {
       folders_first = true,
     },
 
+    -- ├─ 回收站（trash）───────────────────────────────────────
+    -- nvim-tree 的「移到回收站」依赖一个外部命令，Windows 上默认没有
+    -- （默认值 "trash" 是 Linux/macOS 的东西，所以 D 键原本会失败）。
+    -- 这里改用仓库里的 trash.vbs，通过 cscript 调用 Windows 回收站。
+    --
+    -- ⚠️ 三个写法上的坑（都实测踩过）：
+    --   1) 必须写成「解释器 + 脚本路径」，不能只写脚本路径——
+    --      nvim-tree 会先跑 vim.fn.executable(命令的第一个词)，
+    --      而 executable("C:/.../trash.vbs") = 0（它不处理引号，.vbs 也不直接可执行）
+    --   2) 脚本路径不能加引号，否则 binary 变成 '"C:/..."' 一样判断失败。
+    --      好在配置目录路径里没有空格，所以不加引号是安全的。
+    --   3) 脚本路径必须是反斜杠。Neovim 的 stdpath 返回的是正斜杠，
+    --      cscript 拿到混合斜杠（C:\...\nvim/trash.vbs）会执行失败。
+    trash = {
+      cmd = "cscript.exe //nologo "
+        .. (vim.fn.stdpath("config"):gsub("/", "\\"))
+        .. "\\trash.vbs",
+    },
+
     -- 关掉一些默认警告
     hijack_directories = { enable = false },
 
@@ -154,9 +173,9 @@ return {
       vim.keymap.set("n", "a", api.fs.create, o("新建文件 / 文件夹"))
       vim.keymap.set("n", "r", api.fs.rename, o("重命名（可改完整路径）"))
       vim.keymap.set("n", "e", api.fs.rename_basename, o("只改文件名（不带路径）"))
-      vim.keymap.set("n", "d", api.fs.remove, o("删除"))
-      vim.keymap.set("n", "<Del>", api.fs.remove, o("删除"))
+      vim.keymap.set("n", "d", api.fs.trash, o("移到回收站"))
       vim.keymap.set("n", "D", api.fs.trash, o("移到回收站"))
+      vim.keymap.set("n", "<Del>", api.fs.remove, o("彻底删除（不进回收站）"))
       vim.keymap.set("n", "x", api.fs.cut, o("剪切"))
       vim.keymap.set("n", "c", api.fs.copy.node, o("复制文件"))
       vim.keymap.set("n", "p", api.fs.paste, o("粘贴"))
