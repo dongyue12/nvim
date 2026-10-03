@@ -18,6 +18,34 @@ map({ "n", "v" }, "gk", "k", { desc = "上移（屏幕行）" })
 map({ "n", "i", "v" }, "<C-s>", "<cmd>write<cr>", { desc = "保存文件" })
 map("n", "<leader>qq", "<cmd>qa<cr>", { desc = "退出全部" })
 
+-- 智能退出
+-- 问题：打开文件树后输入 :q 只是关掉「当前窗口」，而文件树是独立窗口，
+--       所以树还在，得再输一次 :q 才真正退出。
+-- 解决：判断「当前是不是只剩文件树这一个窗口了」——
+--       是  -> 整体退出 Neovim
+--       不是 -> 正常关闭当前窗口（和原来的 :q 行为一致）
+-- 用 nvim-tree 自带的 is_nvim_tree_buf 判断，比手写 filetype 比对可靠。
+map("n", "<leader>q", function()
+  local wins = vim.api.nvim_tabpage_list_wins(0)
+  local only_tree_left = true
+
+  for _, w in ipairs(wins) do
+    local buf = vim.api.nvim_win_get_buf(w)
+    local ok, utils = pcall(require, "nvim-tree.utils")
+    local is_tree = ok and utils.is_nvim_tree_buf(buf) or (vim.bo[buf].filetype == "NvimTree")
+    if not is_tree then
+      only_tree_left = false
+      break
+    end
+  end
+
+  if only_tree_left then
+    vim.cmd("quitall") -- 只剩树了，整个退出
+  else
+    vim.cmd("quit") -- 还有正常窗口，就关当前这个
+  end
+end, { desc = "智能退出（只剩文件树时整体退出）" })
+
 -- 取消搜索高亮
 map("n", "<Esc>", "<cmd>nohlsearch<cr>", { desc = "取消搜索高亮" })
 

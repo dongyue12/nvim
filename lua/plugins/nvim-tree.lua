@@ -73,4 +73,59 @@ return {
       vim.keymap.set("n", "g?", api.tree.toggle_help, o("帮助"))
     end,
   },
+
+  -- ── 按项目规模自动开文件树 ───────────────────────────────────
+  -- 规则：
+  --   目录里只有 1 个文件  -> 不开树，直接编辑，界面更干净
+  --   有多个文件          -> 自动打开树
+  -- 手动控制随时可用：<leader>e 开关 / <leader>o 聚焦
+  init = function()
+    -- 计数时忽略这些目录，否则 node_modules / .git 会让计数虚高，
+    -- 明明只有一两个源文件却被判定成「多文件项目」
+    local IGNORE = {
+      ".git", "node_modules", ".venv", "venv", "__pycache__",
+      "target", "dist", "build", ".next", ".cache",
+    }
+
+    -- 递归数文件。max_depth 用来限制深度，避免在大仓库上拖慢启动
+    local function count_files(dir, max_depth)
+      local n = 0
+      local ok, iter = pcall(vim.fs.dir, dir, { depth = max_depth or 3 })
+      if not ok or not iter then return 0 end
+      for name, typ in iter do
+        local rel = name:gsub("\\", "/")
+        local skip = false
+        for _, ig in ipairs(IGNORE) do
+          -- 路径里任意一层是忽略目录就跳过
+          if rel:find("/" .. ig .. "/", 1, true) or rel:sub(1, #ig + 1) == ig .. "/" then
+            skip = true
+            break
+          end
+        end
+        if not skip and typ == "file" then n = n + 1 end
+      end
+      return n
+    end
+
+    vim.api.nvim_create_autocmd("VimEnter", {
+      callback = function()
+        if count_files(vim.fn.getcwd(), 3) <= 1 then
+          return -- 只有一个文件，不开树
+        end
+        -- 延迟到窗口布局稳定后再处理
+        vim.schedule(function()
+          -- 这个插件是 cmd/keys 惰性加载的，此时通常还没加载。
+          -- 直接用 require("nvim-tree.api") 会因为插件不在 runtimepath 而失败，
+          -- 被 pcall 静默吞掉、树就打不开了。所以先显式加载插件。
+          if not package.loaded["nvim-tree"] then
+            pcall(vim.cmd, "Lazy load nvim-tree.lua")
+          end
+          local ok, api = pcall(require, "nvim-tree.api")
+          if ok and not api.tree.is_visible() then
+            api.tree.open()
+          end
+        end)
+      end,
+    })
+  end,
 }
