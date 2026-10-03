@@ -5,3 +5,8 @@ vim.g.maplocalleader = "\\"
 require("config.options")
 require("config.keymaps")
 require("config.lazy")
+
+-- 快捷键速查表：把 :help 换成速查表
+-- 必须放在 config.lazy 之后 —— 它要在 bufferline / nvim-tree 等插件
+-- 注册完按键之后再执行，否则表格里读不到那些插件的快捷键
+require("config.cheatsheet").setup()
