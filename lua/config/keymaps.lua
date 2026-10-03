@@ -18,6 +18,51 @@ map({ "n", "v" }, "gk", "k", { desc = "上移（屏幕行）" })
 map({ "n", "i", "v" }, "<C-s>", "<cmd>write<cr>", { desc = "保存文件" })
 map("n", "<leader>qq", "<cmd>qa<cr>", { desc = "退出全部" })
 
+-- ── 复制当前文件路径 ──────────────────────────────────────────
+-- 路径修饰符速查（:h filename-modifiers）：
+--   %:p    完整路径        %:p:h  所在目录        %:t    文件名
+--   %:.    相对当前目录    %:~    相对 home        %:t:r  文件名（去扩展名）
+--
+-- 都走系统剪贴板（+ 寄存器）。你的 clipboard 已经是 unnamedplus，
+-- 所以 y / p 本来就走系统剪贴板，这里是显式指定，更稳。
+local function copy_path(expr, label, empty_msg)
+  local value = vim.fn.expand(expr)
+  -- 空 buffer / 文件树 / 终端等没有文件名的场合，提示一下而不是复制空字符串
+  if value == nil or value == "" then
+    vim.notify(empty_msg or "当前 buffer 没有文件路径", vim.log.levels.WARN)
+    return
+  end
+  vim.fn.setreg("+", value) -- 系统剪贴板
+  vim.fn.setreg('"', value) -- 无名寄存器，方便 p 粘贴
+  vim.notify(label .. "：\n" .. value, vim.log.levels.INFO)
+end
+
+map("n", "<leader>yp", function()
+  copy_path("%:p", "已复制完整路径")
+end, { desc = "复制完整路径" })
+
+map("n", "<leader>yd", function()
+  copy_path("%:p:h", "已复制所在目录")
+end, { desc = "复制所在目录" })
+
+map("n", "<leader>yn", function()
+  copy_path("%:t", "已复制文件名")
+end, { desc = "复制文件名" })
+
+map("n", "<leader>yr", function()
+  copy_path("%:.", "已复制相对路径")
+end, { desc = "复制相对路径" })
+
+-- 想在插入模式直接插入路径的话，取消下面注释。
+-- 注意会覆盖插入模式 <C-l>（原本是「光标右移」，比较常用），
+-- 所以默认不启用；也可以换成别的键，比如 <C-g>p。
+-- map("i", "<C-l>", function()
+--   local value = vim.fn.expand("%:p")
+--   if value ~= "" then
+--     vim.api.nvim_put({ value }, "c", true, true)
+--   end
+-- end, { desc = "插入当前文件完整路径" })
+
 -- 智能退出
 -- 目标：输入 :q 就把 Neovim 一次退干净，不用重复输。
 --
