@@ -141,18 +141,37 @@ return {
 
       -- 用官方推荐的默认按键集合，再覆盖几个
       api.config.mappings.default_on_attach(bufnr)
+
+      -- 打开（查）
       vim.keymap.set("n", "l", api.node.open.edit, o("打开"))
       vim.keymap.set("n", "<CR>", api.node.open.edit, o("打开"))
-      vim.keymap.set("n", "h", api.node.navigate.parent_close, o("折叠父目录"))
+      vim.keymap.set("n", "o", api.node.open.edit, o("打开"))
       vim.keymap.set("n", "v", api.node.open.vertical, o("垂直分屏打开"))
       vim.keymap.set("n", "s", api.node.open.horizontal, o("水平分屏打开"))
+      vim.keymap.set("n", "h", api.node.navigate.parent_close, o("折叠父目录"))
+
+      -- 增删改
+      vim.keymap.set("n", "a", api.fs.create, o("新建文件 / 文件夹"))
+      vim.keymap.set("n", "r", api.fs.rename, o("重命名（可改完整路径）"))
+      vim.keymap.set("n", "e", api.fs.rename_basename, o("只改文件名（不带路径）"))
+      vim.keymap.set("n", "d", api.fs.remove, o("删除"))
+      vim.keymap.set("n", "<Del>", api.fs.remove, o("删除"))
+      vim.keymap.set("n", "D", api.fs.trash, o("移到回收站"))
+      vim.keymap.set("n", "x", api.fs.cut, o("剪切"))
+      vim.keymap.set("n", "c", api.fs.copy.node, o("复制文件"))
+      vim.keymap.set("n", "p", api.fs.paste, o("粘贴"))
+
+      -- 复制路径（gy 符合 Vim 的 g 前缀惯例）
+      vim.keymap.set("n", "y", api.fs.copy.filename, o("复制文件名"))
+      vim.keymap.set("n", "Y", api.fs.copy.relative_path, o("复制相对路径"))
+      vim.keymap.set("n", "gy", api.fs.copy.absolute_path, o("复制绝对路径"))
+
+      -- 其它
       vim.keymap.set("n", "P", api.tree.close, o("关闭但不切换焦点"))
       vim.keymap.set("n", "H", api.tree.toggle_hidden_filter, o("显示/隐藏点文件"))
       vim.keymap.set("n", "R", api.tree.reload, o("刷新"))
-      vim.keymap.set("n", "a", api.fs.create, o("新建文件"))
-      vim.keymap.set("n", "d", api.fs.remove, o("删除"))
-      vim.keymap.set("n", "r", api.fs.rename, o("重命名"))
-      vim.keymap.set("n", "y", api.fs.copy.filename, o("复制文件名"))
+      vim.keymap.set("n", "S", api.tree.search_node, o("在树里搜索文件"))
+      vim.keymap.set("n", "f", api.live_filter.start, o("实时过滤"))
       vim.keymap.set("n", "g?", api.tree.toggle_help, o("帮助"))
     end,
   },
