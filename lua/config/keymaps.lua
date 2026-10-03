@@ -136,6 +136,17 @@ map("v", ">", ">gv", { desc = "右缩进" })
 map("v", "J", ":m '>+1<cr>gv=gv", { desc = "下移选中行" })
 map("v", "K", ":m '<-2<cr>gv=gv", { desc = "上移选中行" })
 
+-- ── 排序 ──────────────────────────────────────────────────────
+-- Vim 的 :sort 默认按「字典序」，所以文件名带数字前缀时会乱：
+--   1.a  10.b  11.c  2.e    <- 默认 :sort 的结果（10 排在 2 前面）
+-- 数字开头要按数值排，必须加 n：
+--   1.a  2.e  10.b  11.c    <- :sort n 的结果
+-- 本机版本不支持 :sort natural（试过，会报 E474）。
+--
+-- 用 :'<,'>sort n 手动排序，或选中行后按下面的键
+map("v", "<leader>so", ":sort n<cr>", { desc = "数字排序（选中行）" })
+map("v", "<leader>sO", ":sort<cr>", { desc = "字典排序（选中行）" })
+
 -- ── 文件树 nvim-tree ──────────────────────────────────────────
 map("n", "<leader>e", "<cmd>NvimTreeToggle<cr>", { desc = "开关文件树" })
 map("n", "<leader>o", "<cmd>NvimTreeFocus<cr>", { desc = "聚焦文件树" })
