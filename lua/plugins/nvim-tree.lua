@@ -1,6 +1,9 @@
 -- nvim-tree : 左侧文件树
---     <leader>e  开关文件树（leader = 空格）
---     <leader>o  聚焦到文件树
+--
+-- 快捷键：<leader>e 开关 / <leader>o 聚焦（leader = 空格）
+--         这两个键定义在下面的 keys 里，用于按需加载这个插件。
+--         树窗口内的按键见 on_attach。
+-- 行为：目录里只有 1 个文件时不自动开树，多个文件才开（见下面的 init）
 return {
   "nvim-tree/nvim-tree.lua",
   version = "*", -- 跟 v1.x 正式发版（当前 v1.18.0）
@@ -111,7 +114,8 @@ return {
           return less_name(a.name, b.name)
         end
 
-        -- 稳定的插入排序（nvim-tree 会频繁调用，目录里条目一般不多，够用）
+        -- 用 table.sort 排序。目录里条目一般不多，性能足够；
+        -- 比较函数里对每个名字做了 cache，避免重复拆分。
         table.sort(nodes, before)
       end,
       folders_first = true,

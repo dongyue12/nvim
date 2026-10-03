@@ -1,4 +1,7 @@
--- vim.opt 基础设置。用 :h option-list 查全部选项
+-- 基础选项设置
+-- 用 :h option-list 查全部可用选项；:set <选项>? 看当前值
+-- 想改某项直接改这里，重开 Neovim 生效
+
 local opt = vim.opt
 
 opt.number = true          -- 行号

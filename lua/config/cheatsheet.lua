@@ -1,9 +1,12 @@
 -- 快捷键速查表
 --
--- 用法：输入 :Help（无参数）弹出这份表。
+-- 用法：
+--   :Help          打开 lua/config/cheatsheet.md 编辑（文件不存在会自动创建）
 --   :Help lsp      带参数时查真正的帮助
 --   :HelpReal      打开帮助文档首页
---   :Cheat         备用入口
+--   :Cheat         同 :Help（备用入口）
+--   :CheatView     浮窗只读查看
+--   :CheatAuto     看自动生成的按键表（读自实际映射，不会过期）
 --   :h <主题>      原生帮助仍然可用（例如 :h lsp）
 --
 -- ⚠️ 为什么不是 :help：
@@ -11,7 +14,8 @@
 --   （试过，报 "Invalid command name (must start with uppercase)"）。
 --   所以按 Vim 惯例用大写变体 :Help。
 --
--- 表格内容是从「真实注册的按键映射」里读出来的，所以不会和配置脱节。
+-- 内容来源：优先读用户自己写的 cheatsheet.md；
+--           没有该文件（或它是空的）时，自动从真实按键映射生成一份。
 
 local M = {}
 
