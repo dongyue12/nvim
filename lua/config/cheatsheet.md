@@ -1,8 +1,6 @@
-我的 Neovim 速查表
-leader 键 = 空格       <leader>e 就是「按空格，再按 e」
+## 我的 Neovim 速查表
 
-    
-    
+leader 键 = 空格       <leader>e 就是「按空格，再按 e」
 
 ## 文件树
 空格 e          开关文件树
