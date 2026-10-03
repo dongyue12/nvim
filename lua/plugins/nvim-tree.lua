@@ -45,6 +45,78 @@ return {
       dotfiles = false, -- 显示 .gitignore 之类的点文件（按 H 可临时隐藏）
     },
 
+    -- ── 排序：数字感知（自然排序）──────────────────────────────
+    -- nvim-tree 内置的 "name" 是字典序，文件带数字前缀时会乱：
+    --   1.a  10.b  11.c  2.e    <- 内置 :sort / name 排序的结果
+    -- 下面这个自定义 sorter 把名字切成「文字段 / 数字段」逐段比较：
+    --   1.a  2.e  10.b  11.c    <- 符合直觉
+    -- 大小写不敏感，目录仍然排在文件前面。
+    --
+    -- 原理：把 "a10b2" 拆成 { "a", 10, "b", 2 }；
+    --       数字段按数值比（2 < 10），文字段按小写字符串比；
+    --       前缀全部相同时，短的在前。
+    sort = {
+      sorter = function(nodes)
+        -- 把一个名字拆成可比较的片段列表：{ {num=10}, {str="abc"}, ... }
+        local function pieces(s)
+          local out = {}
+          local i, len = 1, #s
+          while i <= len do
+            local ch = s:sub(i, i)
+            local is_digit = ch >= "0" and ch <= "9"
+            local j = i
+            while j <= len do
+              local c = s:sub(j, j)
+              if (c >= "0" and c <= "9") ~= is_digit then break end
+              j = j + 1
+            end
+            local seg = s:sub(i, j - 1)
+            if is_digit then
+              out[#out + 1] = { num = tonumber(seg) }
+            else
+              out[#out + 1] = { str = seg:lower() }
+            end
+            i = j
+          end
+          return out
+        end
+
+        local cache = {}
+        local function keyf(name)
+          if cache[name] == nil then cache[name] = pieces(name) end
+          return cache[name]
+        end
+
+        -- a 是否应排在 b 前面（名字层面）
+        local function less_name(a, b)
+          local pa, pb = keyf(a), keyf(b)
+          for i = 1, math.min(#pa, #pb) do
+            local x, y = pa[i], pb[i]
+            if x.num ~= nil and y.num ~= nil then
+              if x.num ~= y.num then return x.num < y.num end
+            elseif x.str ~= nil and y.str ~= nil then
+              if x.str ~= y.str then return x.str < y.str end
+            else
+              -- 类型不同（一个是数字段一个是文字段）：数字段排前面，保证顺序稳定
+              return x.num ~= nil
+            end
+          end
+          return #pa < #pb
+        end
+
+        -- 整体排序：先比「目录/文件」，再比名字
+        local function before(a, b)
+          local ad, bd = a.type == "directory", b.type == "directory"
+          if ad ~= bd then return ad end -- 目录优先
+          return less_name(a.name, b.name)
+        end
+
+        -- 稳定的插入排序（nvim-tree 会频繁调用，目录里条目一般不多，够用）
+        table.sort(nodes, before)
+      end,
+      folders_first = true,
+    },
+
     -- 关掉一些默认警告
     hijack_directories = { enable = false },
     update_focused_file = { enable = true }, -- 切换 buffer 时自动定位到对应文件
