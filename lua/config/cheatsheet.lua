@@ -139,14 +139,62 @@ function M.build()
   add("")
   add(string.rep("─", 72))
   add("  提示：按 :Lazy 管理插件、:Mason 装 LSP、:checkhealth 体检")
-  add("       本表由 lua/config/cheatsheet.lua 生成，内容取自实际按键映射")
+  add("  想自己写这份表：创建 lua/config/cheatsheet.md（用 :CheatEdit 直接打开）")
+  add("  本表由 lua/config/cheatsheet.lua 自动生成，内容取自实际按键映射")
 
+  return lines
+end
+
+-- 用户自己写的速查表文件路径
+-- 位置：<配置目录>/lua/config/cheatsheet.md
+local function user_file()
+  return vim.fn.stdpath("config") .. "/lua/config/cheatsheet.md"
+end
+
+function M.path()
+  return user_file()
+end
+
+-- 读取用户自己写的速查表；不存在或是空文件就返回 nil
+function M.user_lines()
+  local path = user_file()
+  if vim.fn.filereadable(path) ~= 1 then
+    return nil
+  end
+
+  local ok, content = pcall(vim.fn.readfile, path)
+  if not ok or type(content) ~= "table" then
+    return nil
+  end
+
+  -- 去掉纯空白行组成的空文件
+  local has_text = false
+  for _, l in ipairs(content) do
+    if vim.trim(l) ~= "" then
+      has_text = true
+      break
+    end
+  end
+  if not has_text then
+    return nil
+  end
+
+  -- 每行前面补两个空格，和自动生成的表保持同样的缩进观感
+  local lines = {}
+  for _, l in ipairs(content) do
+    lines[#lines + 1] = "  " .. l
+  end
   return lines
 end
 
 -- 打开浮窗显示
 local function open_float()
-  local lines = M.build()
+  -- 优先级：用户自己写的 cheatsheet.md > 自动生成的表
+  local lines = M.user_lines()
+  local from_user = lines ~= nil
+  if not lines then
+    lines = M.build()
+  end
 
   local width = 0
   for _, l in ipairs(lines) do
@@ -169,7 +217,7 @@ local function open_float()
     col = math.max(1, math.floor((vim.o.columns - width) / 2)),
     style = "minimal",
     border = "rounded",
-    title = " 帮助 / 快捷键速查 ",
+    title = from_user and " 我的速查表 " or " 帮助 / 快捷键速查（自动生成） ",
     title_pos = "center",
   })
 
@@ -215,6 +263,47 @@ function M.setup()
 
   -- 备用入口（万一 :Help 被别的东西占了）
   vim.api.nvim_create_user_command("Cheat", open_float, { desc = "快捷键速查表" })
+
+  -- 打开你自己的速查表文件来编辑
+  vim.api.nvim_create_user_command("CheatEdit", function()
+    local path = user_file()
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
+  end, { desc = "编辑我的速查表（lua/config/cheatsheet.md）" })
+
+  -- 打开自动生成的表（即使你写了 cheatsheet.md 也能看）
+  vim.api.nvim_create_user_command("CheatAuto", function()
+    local lines = M.build()
+    local width = 0
+    for _, l in ipairs(lines) do
+      local w = vim.fn.strdisplaywidth(l)
+      if w > width then width = w end
+    end
+    width = math.min(width + 2, vim.o.columns - 4)
+    local height = math.min(#lines, vim.o.lines - 6)
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.bo[buf].modifiable = false
+    vim.bo[buf].bufhidden = "wipe"
+
+    local win = vim.api.nvim_open_win(buf, true, {
+      relative = "editor",
+      width = width,
+      height = height,
+      row = math.max(1, math.floor((vim.o.lines - height) / 2) - 1),
+      col = math.max(1, math.floor((vim.o.columns - width) / 2)),
+      style = "minimal",
+      border = "rounded",
+      title = " 自动生成的速查表 ",
+      title_pos = "center",
+    })
+    vim.keymap.set("n", "q", function()
+      if vim.api.nvim_win_is_valid(win) then vim.api.nvim_win_close(win, true) end
+    end, { buffer = buf, desc = "关闭" })
+    vim.keymap.set("n", "<Esc>", function()
+      if vim.api.nvim_win_is_valid(win) then vim.api.nvim_win_close(win, true) end
+    end, { buffer = buf, desc = "关闭" })
+  end, { desc = "查看自动生成的速查表（忽略你自己的文件）" })
 end
 
 return M
