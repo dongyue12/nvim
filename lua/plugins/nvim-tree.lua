@@ -120,30 +120,13 @@ return {
     -- 关掉一些默认警告
     hijack_directories = { enable = false },
 
-    -- 切换 buffer 时自动定位到对应文件；但当 nvim-tree 把根目录也跟着换掉时，
-    -- 在别的项目里 :Help 看速查表会把文件树「拐」到配置目录，很烦。
-    -- 所以下面用 exclude 把速查表排除掉：只有它不触发定位。
-    -- exclude 传进来的是 BufEnter 的 event，用 event.buf 取当前 buffer。
-    update_focused_file = {
-      enable = true,
-      exclude = function(event)
-        local buf = (event and event.buf) or vim.api.nvim_get_current_buf()
-        if not vim.api.nvim_buf_is_valid(buf) then
-          return false
-        end
-        -- 速查表文件：按路径判断
-        local name = vim.api.nvim_buf_get_name(buf)
-        if name ~= "" then
-          local cheat = require("config.cheatsheet").path()
-          -- Windows 下大小写不敏感，统一转小写再比
-          if name:lower() == cheat:lower() then
-            return true
-          end
-        end
-        -- 也可以手动给某个 buffer 打标记来排除
-        return vim.b[buf].nvim_tree_no_jump == true
-      end,
-    },
+    -- 自动定位：切换 buffer 时让树跳到该文件所在目录。
+    -- 已关闭，原因有两个：
+    --   1) 在别的项目里 :Help 看速查表，树会被「拐」到配置目录
+    --   2) 在多个目录间切文件时，树会跟着跳来跳去，容易迷失位置
+    -- 关掉后树的根目录就固定在你打开的地方，只有你主动改（:cd / 用树里的
+    -- 目录操作）才会变。想恢复就改成 enable = true。
+    update_focused_file = { enable = false },
 
     -- 文件树窗口里的按键（都是 nvim-tree 窗口内生效，不影响普通编辑）
     on_attach = function(bufnr)
