@@ -149,3 +149,11 @@ map("v", "K", ":m '<-2<cr>gv=gv", { desc = "上移选中行" })
 -- 本机版本不支持 :sort natural（试过，会报 E474）。
 map("v", "<leader>so", ":sort n<cr>", { desc = "数字排序（选中行）" })
 map("v", "<leader>sO", ":sort<cr>", { desc = "字典排序（选中行）" })
+
+-- ── C 语言编译运行（逻辑在 config/compile.lua）────────────────
+map("n", "<leader>rr", function() require("config.compile").compile_and_run() end,
+  { desc = "编译并运行（C/C++）" })
+map("n", "<leader>rc", function() require("config.compile").compile() end,
+  { desc = "只编译（C/C++）" })
+map("n", "<leader>ro", function() require("config.compile").run_only() end,
+  { desc = "只运行（用上次编译的 exe）" })

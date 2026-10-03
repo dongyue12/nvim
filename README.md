@@ -17,13 +17,18 @@
 │   │   ├── keymaps.lua          <-- 全局快捷键
 │   │   ├── lazy.lua             <-- 插件管理器自举
 │   │   ├── quit.lua             <-- 智能退出（:q 的替换逻辑）
+│   │   ├── compile.lua          <-- C/C++ 一键编译运行
 │   │   ├── cheatsheet.lua       <-- 速查表功能（:Help 等命令）
 │   │   └── cheatsheet.md        <-- ★ 你自己写的速查表内容，:Help 打开它
 │   └── 📂 plugins               <-- 插件列表（每个文件一个插件）
 │       ├── nvim-tree.lua        <-- 左侧文件树
 │       ├── bufferline.lua       <-- 顶部标签栏
 │       ├── toggleterm.lua       <-- 内置终端
-│       └── tokyonight.lua       <-- 主题配色
+│       ├── tokyonight.lua       <-- 主题配色
+│       ├── mason.lua            <-- LSP / 工具安装器
+│       ├── lsp.lua              <-- LSP 接线（clangd 等）
+│       ├── blink.lua            <-- 补全菜单
+│       └── pairs.lua            <-- 自动配对括号
 ```
 
 `init.lua` 的加载顺序（**顺序有讲究**）：
@@ -47,15 +52,24 @@
 | [bufferline.nvim](https://github.com/akinsho/bufferline.nvim) | 顶部标签栏 | `version = "*"` |
 | [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim) | 内置终端 | `version = "*"` |
 | [tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | 主题 | 最新 |
+| [mason.nvim](https://github.com/mason-org/mason.nvim) | 装 LSP / 格式化工具 | 最新 |
+| [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) | LSP 接线（clangd） | 最新 |
+| [blink.cmp](https://github.com/Saghen/blink.cmp) | 补全菜单 | `version = "1.*"` |
+| [mini.pairs](https://github.com/echasnovski/mini.pairs) | 自动配对括号引号 | main 分支 |
+
+LSP 服务器由 mason 装到 `nvim-data/mason/`，目前在用的是 **clangd**（C/C++）。
+注意 mason 装的东西**不在系统 PATH 里**，所以 `lsp.lua` 里用绝对路径找 clangd。
 
 ## 一些自己实现的逻辑（不太常见，改之前先看懂）
 
 | 功能 | 文件 | 说明 |
 |---|---|---|
 | **`:q` 智能退出** | `config/quit.lua` | 没未保存改动时一次退干净；有改动则拦住 |
+| **C/C++ 一键编译运行** | `config/compile.lua` | 空格 r r 编译并运行，错误进 quickfix |
 | **速查表** | `config/cheatsheet.lua` | `:Help` 打开 `cheatsheet.md` 编辑 |
 | **按项目规模开文件树** | `plugins/nvim-tree.lua` | 单文件不开树，多文件自动开 |
 | **数字感知排序** | `plugins/nvim-tree.lua` | 文件树里 `1,2,10` 而不是 `1,10,2` |
+| **回收站** | `trash.vbs` + `plugins/nvim-tree.lua` | Windows 没有 `trash` 命令，用 COM 自己实现 |
 | **h/j/k/l 当方向键** | `config/keymaps.lua` | 保留 Vim 语义，数字前缀仍有效 |
 
 ## 常用命令
