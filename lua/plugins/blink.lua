@@ -16,9 +16,8 @@ return {
   "saghen/blink.cmp",
   version = "1.*", -- 跟 v1.x（不用 "*"，那会被当成 shell 命令）
   event = "InsertEnter",
-  dependencies = {
-    "saghen/blink.lib",
-  },
+  -- 没有额外依赖。不用加 saghen/blink.lib —— 那是同作者的通用库，
+  -- blink.cmp 内部并不引用它（实测 grep 无结果）。
 
   opts = {
     -- 按键预设："default" 提供 Ctrl+n/p/y/e 这套
