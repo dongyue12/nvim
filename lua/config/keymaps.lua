@@ -19,18 +19,22 @@ map({ "n", "i", "v" }, "<C-s>", "<cmd>write<cr>", { desc = "保存文件" })
 map("n", "<leader>qq", "<cmd>qa<cr>", { desc = "退出全部" })
 
 -- 智能退出
--- 问题：打开文件树后输入 :q 只是关掉「当前窗口」，而文件树是独立窗口，
+-- 问题：打开文件树后输入 :q 只关掉「当前窗口」，而文件树是独立窗口，
 --       所以树还在，得再输一次 :q 才真正退出。
 -- 解决：判断「当前是不是只剩文件树这一个窗口了」——
 --       是  -> 整体退出 Neovim
 --       不是 -> 正常关闭当前窗口（和原来的 :q 行为一致）
--- 用 nvim-tree 自带的 is_nvim_tree_buf 判断，比手写 filetype 比对可靠。
-map("n", "<leader>q", function()
-  local wins = vim.api.nvim_tabpage_list_wins(0)
+--
+-- 下面把 :q 本身替换成这个逻辑。三点注意：
+--   1) 用 force = true 才能覆盖内置命令
+--   2) 声明 nargs/range/bang，否则 :q!、:1q、:q a.txt 这类用法会失效
+--   3) 有未保存改动时仍然拦住（走原来的 quit，会报 E37），不会误丢改动
+local function smart_quit(bang)
   local only_tree_left = true
 
-  for _, w in ipairs(wins) do
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
     local buf = vim.api.nvim_win_get_buf(w)
+    -- 用 nvim-tree 自带判断，没有插件时退回 filetype 比对
     local ok, utils = pcall(require, "nvim-tree.utils")
     local is_tree = ok and utils.is_nvim_tree_buf(buf) or (vim.bo[buf].filetype == "NvimTree")
     if not is_tree then
@@ -40,10 +44,26 @@ map("n", "<leader>q", function()
   end
 
   if only_tree_left then
-    vim.cmd("quitall") -- 只剩树了，整个退出
+    -- 只剩树了：整个退出。注意这里不加 !，保留「有未保存改动就拦住」的保护
+    vim.cmd("quitall")
   else
-    vim.cmd("quit") -- 还有正常窗口，就关当前这个
+    vim.cmd(bang and "quit!" or "quit")
   end
+end
+
+vim.api.nvim_create_user_command("Q", function(opts)
+  smart_quit(opts.bang)
+end, {
+  desc = "智能退出（只剩文件树时整体退出）",
+  nargs = "*",
+  range = true,
+  bang = true,
+  force = true,
+})
+
+-- <leader>q 保留作为备用（比如 :q 被别的插件抢走时）
+map("n", "<leader>q", function()
+  smart_quit(false)
 end, { desc = "智能退出（只剩文件树时整体退出）" })
 
 -- 取消搜索高亮
