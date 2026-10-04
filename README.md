@@ -18,6 +18,7 @@
 │   │   ├── lazy.lua             <-- 插件管理器自举
 │   │   ├── quit.lua             <-- 智能退出（:q 的替换逻辑）
 │   │   ├── compile.lua          <-- C/C++ 一键编译运行
+│   │   ├── tree_nav.lua         <-- 文件树 ↔ 代码区切换
 │   │   ├── cheatsheet.lua       <-- 速查表功能（:Help 等命令）
 │   │   └── cheatsheet.md        <-- ★ 你自己写的速查表内容，:Help 打开它
 │   └── 📂 plugins               <-- 插件列表（每个文件一个插件）

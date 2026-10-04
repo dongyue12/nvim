@@ -1,8 +1,12 @@
 -- nvim-tree : 左侧文件树
 --
 -- 快捷键：<leader>e 开关 / <leader>o 聚焦（leader = 空格）
---         这两个键定义在下面的 keys 里，用于按需加载这个插件。
+--         <leader>h 切到文件树 / <leader>l 切回代码区
+--         这些都定义在下面的 keys 里，用于按需加载这个插件。
 --         树窗口内的按键见 on_attach。
+--         <leader>h / <leader>l 的实际逻辑在 lua/config/tree_nav.lua
+--         （不能写在本文件里：lua/plugins/ 下的文件被 lazy 当作 spec，
+--          require 本文件拿到的是 spec 表，不是模块）
 -- 行为：目录里只有 1 个文件时不自动开树，多个文件才开（见下面的 init）
 return {
   "nvim-tree/nvim-tree.lua",
@@ -15,6 +19,20 @@ return {
   keys = {
     { "<leader>e", "<cmd>NvimTreeToggle<cr>", desc = "开关文件树" },
     { "<leader>o", "<cmd>NvimTreeFocus<cr>", desc = "聚焦文件树" },
+    {
+      "<leader>h",
+      function()
+        require("config.tree_nav").focus_tree()
+      end,
+      desc = "切到文件树（没开会自动开）",
+    },
+    {
+      "<leader>l",
+      function()
+        require("config.tree_nav").focus_editor()
+      end,
+      desc = "切回代码区",
+    },
   },
 
   dependencies = {
