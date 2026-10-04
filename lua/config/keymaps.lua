@@ -131,9 +131,16 @@ map("n", "<C-Left>", "<cmd>vertical resize -2<cr>", { desc = "缩窄窗口" })
 map("n", "<C-Right>", "<cmd>vertical resize +2<cr>", { desc = "加宽窗口" })
 
 -- ── buffer 切换（顶部标签）────────────────────────────────────
--- 完整的开关/跳转键在 plugins/bufferline.lua，这里是常用补充
-map("n", "<S-l>", "<cmd>bnext<cr>", { desc = "下一个 buffer" })
-map("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "上一个 buffer" })
+-- ⚠️ 这里**故意不映射 H / L**：
+--   Vim 里 <S-h> 和 H 是同一个键，映射 <S-h> 就等于占用了原生 H。
+--   而原生 H / M / L 是「跳到屏幕顶部 / 中间 / 底部」，非常常用
+--   （翻页后想定位时特别好用），不该为切 buffer 让路。
+--
+--   切 buffer 用这些（都在 bufferline 里注册，见 plugins/bufferline.lua）：
+--     空格 b n / 空格 b p      下一个 / 上一个
+--     空格 1~9                 直接跳第 N 个
+--     空格 b d / b o / b l / b h   关闭
+--   nvim-tree 窗口内的 H 是另一个局部的映射（显示/隐藏点文件），不受影响。
 
 -- ── 缩进与移动选中行 ──────────────────────────────────────────
 map("v", "<", "<gv", { desc = "左缩进" })
