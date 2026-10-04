@@ -41,7 +41,7 @@ return {
         map("<leader>lr", buf.rename, "重命名符号")
         map("<leader>la", vim.lsp.buf.code_action, "代码操作（快速修复）")
         map("<leader>lf", function()
-          vim.lsp.buf.format({ async = true })
+          require("config.format").format()
         end, "格式化")
         map("<leader>ld", vim.diagnostic.open_float, "查看当前行诊断")
         map("[d", function()

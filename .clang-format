@@ -1,0 +1,61 @@
+# clang-format 配置（C / C++ 代码格式化）
+#
+# 为什么需要它：
+#   clang-format 的默认风格是「2 个空格缩进」（UseTab: Never）。
+#   所以在 Neovim 里按 <leader>lf 格式化时，你代码里的 tab 会被全换成空格 ——
+#   和我们的 tab 缩进设置冲突。
+#   这个文件把缩进改成 tab，宽度跟着 tabstop=4。
+#
+# 怎么生效：
+#   clangd 找配置的顺序是「从源文件所在目录逐级往上层找 .clang-format」。
+#   你的项目在 D:\backup\programming\ 下，那里没有这个文件，
+#   所以 lua/plugins/lsp.lua 里的格式化函数会在格式化前把这个文件
+#   临时放到源文件所在目录，用完删掉 —— 这样你走到哪都有一致的风格。
+#
+# 想改风格：直接改下面的值，或者在项目目录里放一个自己的 .clang-format
+#           （项目里的优先，不会被覆盖）。
+
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# ── 缩进：用真正的 tab ────────────────────────────────────────
+UseTab: Always              # 缩进用 tab（Never=只用空格，ForIndentation=只在缩进处用）
+IndentWidth: 4              # 每级缩进的宽度
+TabWidth: 4                 # 一个 tab 算几列（跟着 Vim 的 tabstop=4）
+ContinuationIndentWidth: 4  # 换行续行的缩进
+
+# ── 常用的风格项 ──────────────────────────────────────────────
+ColumnLimit: 100            # 每行最多 100 列（超过才考虑换行）
+BreakBeforeBraces: Attach   # 左花括号跟在语句后面（C 的常见写法）
+
+# 指针 / 引用的星号贴着变量名（int *p 而不是 int* p）
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# 一行里短函数可以保持原样，不要强行拆开
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# 保留连续的空行（最多 2 行），不要把代码里的分段抹掉
+MaxEmptyLinesToKeep: 2
+
+# 不重排 include（你手写的顺序有自己的理由）
+SortIncludes: Never
+
+# 对齐连续赋值，读起来更整齐
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+
+# 文件末尾补一个换行
+InsertNewlineAtEOF: true
+
+# ⚠️ 注意：clang-format **没有** TrimTrailingWhitespace 这个选项
+#    （那是编辑器的功能）。写错任何一个选项都会让 clang-format
+#    拒绝读取整份配置，然后静默退回默认风格 —— 这个坑踩过：
+#      error: unknown key 'TrimTrailingWhitespace'
+#      Error reading .clang-format: invalid argument
+#    想删行尾空格：Vim 里 :%s/\s\+$//e  或者装个自动清理的插件。
+#    改完配置可以用下面这条命令验证（有错会直接报出来）：
+#      clang-format --style=file --dump-config >nul

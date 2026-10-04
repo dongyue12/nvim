@@ -13,13 +13,15 @@
 ├── 📄 init.lua                  <-- 入口，按顺序 require 下面这些
 ├── 📄 lazy-lock.json            <-- 插件版本锁（要提交，换机器能还原）
 ├── 📄 trash.vbs                 <-- Windows 回收站脚本（见下文说明）
+├── 📄 .clang-format             <-- C/C++ 格式化风格（tab 缩进，空格 lf 用）
 ├── 📂 lua
 │   ├── 📂 config                <-- 基础设置
-│   │   ├── options.lua          <-- vim.opt 设置
+│   │   ├── options.lua          <-- vim.opt 设置（含 C 用 tab 的规则）
 │   │   ├── keymaps.lua          <-- 全局快捷键
 │   │   ├── lazy.lua             <-- 插件管理器自举
 │   │   ├── quit.lua             <-- 智能退出（:q 的替换逻辑）
 │   │   ├── compile.lua          <-- C/C++ 一键编译运行
+│   │   ├── format.lua           <-- 代码格式化（让 clang-format 用 tab）
 │   │   ├── tree_nav.lua         <-- 文件树 ↔ 代码区切换
 │   │   ├── cheatsheet.lua       <-- 速查表功能（:Help 等命令）
 │   │   └── cheatsheet.md        <-- ★ 日常速查表内容，:Help 打开它
@@ -128,6 +130,30 @@ C 文件里还会**自动打开不可见字符显示**，这样能一眼看出�
 > **为什么 C 用 tab 而不是空格**：你现有的练习文件（`3.hourl.c`、`7.switch.c` 等）
 > 本来就是 tab 缩进的。之前全局设置是"空格"，所以你手敲的 tab 会被转成空格，
 > 导致部分文件混进了空格。现在明确按文件类型切开了。
+
+### 代码格式化（`空格 lf`）与缩进的配合
+
+`空格 lf` 走的是 clangd 背后的 **clang-format**。它默认风格是「2 个空格缩进」，
+会把 tab 全换成空格 —— 和上面的 tab 设置打架。
+
+所以配置目录里放了一份 **`.clang-format`**（`UseTab: Always`、`IndentWidth: 4`），
+格式化前由 `config/format.lua` 临时复制到源文件所在目录，格式化完删掉：
+
+```
+clangd 找配置的顺序：从源文件目录逐级向上找 .clang-format
+你的项目在 D:\backup\programming\ 下 → 那儿没有配置
+→ format.lua 临时放一份进去 → 格式化 → 删掉
+→ 如果项目里已经有 .clang-format，就尊重它，不覆盖
+```
+
+> ⚠️ **改 `.clang-format` 时注意**：clang-format 只要遇到**一个不认识的选项**，
+> 就会拒绝读取整份配置并静默退回默认风格（表现就是"格式化后变成 2 空格缩进"）。
+> 改完用这条命令验证：
+> ```powershell
+> cd C:\Users\Legion\AppData\Local\nvim
+> clang-format --style=file --dump-config > nul   # 退出码 0 = 配置有效
+> ```
+> 踩过的坑：写了 `TrimTrailingWhitespace`（那其实是编辑器的功能，不是 clang-format 的选项）。
 
 ## LSP（代码提示）
 
